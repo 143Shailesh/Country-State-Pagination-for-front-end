@@ -1,5 +1,8 @@
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import '../Country.css';
 
 const State = () => {
@@ -39,6 +42,39 @@ const State = () => {
             });
     };
 
+    const generateStatePDF = () => {
+        const doc = new jsPDF();
+        doc.text('State List', 20, 10);
+
+        const tableColumn = ['ID', 'State Name', 'Country'];
+        const tableRows = states.map((state, index) => [
+            index + 1,
+            state.name,
+            state.country,
+        ]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 20,
+        });
+
+        doc.save('state_list.pdf');
+    };
+
+    const generateStateExcel = () => {
+        const worksheet = XLSX.utils.json_to_sheet(
+            states.map(state => ({
+                ID: state.id,
+                Name: state.name,
+                Country: state.country,
+            }))
+        );
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'States');
+        XLSX.writeFile(workbook, 'state_list.xlsx');
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const state = {
@@ -55,7 +91,6 @@ const State = () => {
                 .catch(error => {
                     console.error('Error updating the state!', error);
                 });
-
         } else {
             axios.post('http://localhost:8080/states', state)
                 .then(() => {
@@ -141,6 +176,8 @@ const State = () => {
 
             <div className='tableData'>
                 <h1>State Lists</h1>
+                <button onClick={generateStatePDF}>Generate PDF</button>
+                <button onClick={generateStateExcel}>Generate Excel</button>
                 <table>
                     <thead>
                         <tr>

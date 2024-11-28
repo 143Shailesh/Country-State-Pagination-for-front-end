@@ -1,5 +1,8 @@
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import '../Country.css';
 
 const Country = () => {
@@ -27,6 +30,35 @@ const Country = () => {
                 setError('Error fetching countries');
                 console.error(error);
             });
+    };
+
+    const generatePDF = () => {
+        const doc = new jsPDF();
+        doc.text('Country List', 20, 10);
+
+        const tableColumn = ['ID', 'Name'];
+        const tableRows = countries.map(country => [country.id, country.name]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 20,
+        });
+
+        doc.save('countries.pdf');
+    };
+
+    const generateExcel = () => {
+        const worksheet = XLSX.utils.json_to_sheet(
+            countries.map(country => ({
+                ID: country.id,
+                Name: country.name,
+            }))
+        );
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Countries');
+
+        XLSX.writeFile(workbook, 'countries.xlsx');
     };
 
     const handlePagination = (direction) => {
@@ -94,9 +126,12 @@ const Country = () => {
                     onChange={(e) => setName(e.target.value)}
                     required
                 />
-                <button type="submit">{editId ? 'Update' : 'Add Countries'}</button>
+                <button type="submit">{editId ? 'Update' : 'Add Country'}</button>
                 <button type="button" onClick={resetForm}>Reset</button>
             </form>
+
+            <button onClick={generatePDF}>Generate PDF</button>
+            <button onClick={generateExcel}>Export to Excel</button>
 
             <h2>Country List</h2>
             <table>
@@ -125,7 +160,7 @@ const Country = () => {
                 <span>Page {currentPage + 1} of {totalPages}</span>
                 <button disabled={currentPage === totalPages - 1} onClick={() => handlePagination('next')}>Next</button>
                 <label>
-                    Page Size: 
+                    Page Size:
                     <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                         <option value={5}>5</option>
                         <option value={10}>10</option>
@@ -134,7 +169,6 @@ const Country = () => {
                 </label>
             </div>
 
-        
             {viewCountry && (
                 <div className="modal">
                     <div className="modal-content">
